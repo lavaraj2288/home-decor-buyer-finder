@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: home-decor-buyer-finder
+    runtime: node
+    buildCommand: npm install --prefix server && npm install --prefix client && npm run build --prefix client
+    startCommand: npm start --prefix server
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: GOOGLE_PLACES_API_KEY
+        sync: false
+      - key: HUNTER_API_KEY
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: RESEND_FROM_EMAIL
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
