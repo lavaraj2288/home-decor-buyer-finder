@@ -24,22 +24,37 @@ router.get('/', async (request, response) => {
 	if (!allowedLimits.has(resultLimit)) {
 		return response.status(400).json({ success: false, error: 'Results limit must be 10, 20, or 30.' })
 	}
-	if (!process.env.GOOGLE_PLACES_API_KEY) {
-		return response.status(503).json({ success: false, error: 'Buyer search is not configured. Add GOOGLE_PLACES_API_KEY to server/.env.' })
-	}
 
 	try {
-		const places = await searchPlaces({ keyword: keyword.trim(), buyerType: buyerType.trim(), location: location.trim(), keywords: keywords.trim(), limit: resultLimit })
+		const places = await searchPlaces({
+			keyword: keyword.trim(),
+			buyerType: buyerType.trim(),
+			location: location.trim(),
+			keywords: keywords.trim(),
+			limit: resultLimit,
+		})
+
 		const buyers = await Promise.all(places.map(async (place) => {
-			let email = null
-			if (place.website) {
+			let email = place.email || null
+			let emailSource = place.emailSource || null
+
+			if (!email && place.website) {
 				try {
-					email = await findBusinessEmail(place.website)
+					const lookup = await findBusinessEmail(place.website, place.name)
+					if (lookup) {
+						email = lookup.email
+						emailSource = lookup.source
+					}
 				} catch (error) {
-					console.warn(`Hunter lookup failed for ${place.name}:`, error.message)
+					console.warn(`Hunter lookup note for ${place.name}:`, error.message)
 				}
 			}
-			return { ...place, email, emailSource: email ? 'Hunter' : null }
+
+			return {
+				...place,
+				email,
+				emailSource: email ? (emailSource || 'Hunter') : null,
+			}
 		}))
 
 		return response.json({ success: true, count: buyers.length, buyers })

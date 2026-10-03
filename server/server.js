@@ -18,14 +18,22 @@ const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:5173')
 
 app.use(cors({
 	origin(origin, callback) {
-		if (!origin || allowedOrigins.includes(origin)) return callback(null, true)
+		if (!origin || allowedOrigins.includes(origin) || /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+			return callback(null, true)
+		}
 		return callback(new Error('Origin is not allowed by CORS.'))
 	},
 }))
 app.use(express.json({ limit: '1mb' }))
 
 app.get('/api/health', (_request, response) => {
-	response.json({ status: 'ok', service: 'HomeDecor Buyer Finder API' })
+	response.json({
+		status: 'ok',
+		service: 'HomeDecor Buyer Finder API',
+		googlePlacesConfigured: Boolean(process.env.GOOGLE_PLACES_API_KEY),
+		hunterConfigured: Boolean(process.env.HUNTER_API_KEY),
+		resendConfigured: Boolean(process.env.RESEND_API_KEY && process.env.RESEND_FROM_EMAIL),
+	})
 })
 
 app.use('/api/buyers', buyersRouter)
@@ -51,4 +59,6 @@ app.use((error, _request, response, _next) => {
 
 app.listen(port, '0.0.0.0', () => {
 	console.log(`HomeDecor Buyer Finder API listening on port ${port}`)
+	console.log(`- Web app URL: http://localhost:${port}`)
+	console.log(`- Health check: http://localhost:${port}/api/health`)
 })

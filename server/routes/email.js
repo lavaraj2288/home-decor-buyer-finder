@@ -16,13 +16,10 @@ router.post('/send', async (request, response) => {
 	if (typeof message !== 'string' || !message.trim()) {
 		return response.status(400).json({ success: false, message: 'Email message is required.' })
 	}
-	if (!process.env.RESEND_API_KEY || !process.env.RESEND_FROM_EMAIL) {
-		return response.status(503).json({ success: false, message: 'Email sending is not configured. Add RESEND_API_KEY and RESEND_FROM_EMAIL to server/.env.' })
-	}
 
 	try {
-		await sendEmail({ to: to.trim(), subject: subject.trim(), message: message.trim() })
-		return response.json({ success: true, message: 'Email sent successfully' })
+		const result = await sendEmail({ to: to.trim(), subject: subject.trim(), message: message.trim() })
+		return response.json({ success: true, message: result.message || 'Email sent successfully' })
 	} catch (error) {
 		return response.status(error.status || 502).json({ success: false, message: error.message || 'Email could not be sent.' })
 	}
